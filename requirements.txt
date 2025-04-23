@@ -1,0 +1,7 @@
+spotipy
+qbittorrent-api
+requests
+beautifulsoup4
+python-dotenv
+rumps
+pync
