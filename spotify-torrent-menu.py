@@ -6,7 +6,7 @@ from spotipy.oauth2 import SpotifyOAuth
 import qbittorrentapi
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, urlparse, urlunparse
 from dotenv import load_dotenv
 import rumps
 from pync import Notifier
@@ -28,13 +28,36 @@ if missing:
     Notifier.notify(msg, title="SpotifyTorrent")
     sys.exit(1)
 
+# Normalize redirect URI: replace localhost with loopback IP and force HTTP
+raw_redirect = os.getenv('SPOTIPY_REDIRECT_URI') or ''
+parsed = urlparse(raw_redirect)
+if parsed.hostname == 'localhost':
+    # Spotify disallows 'localhost', use loopback IP literal
+    new_netloc = parsed.netloc.replace('localhost', '127.0.0.1')
+    normalized_redirect = urlunparse(parsed._replace(scheme='http', netloc=new_netloc))
+    logging.warning(f"Redirect URI hostname 'localhost' replaced with loopback IP: {normalized_redirect}")
+else:
+    normalized_redirect = raw_redirect
+
 # Spotify auth
-sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
-    client_id=os.getenv('SPOTIPY_CLIENT_ID'),
-    client_secret=os.getenv('SPOTIPY_CLIENT_SECRET'),
-    redirect_uri=os.getenv('SPOTIPY_REDIRECT_URI'),
-    scope="playlist-read-private playlist-modify-private"
-))
+try:
+    auth_manager = SpotifyOAuth(
+        client_id=os.getenv('SPOTIPY_CLIENT_ID'),
+        client_secret=os.getenv('SPOTIPY_CLIENT_SECRET'),
+        redirect_uri=normalized_redirect,
+        scope="playlist-read-private playlist-modify-private"
+    )
+    sp = spotipy.Spotify(auth_manager=auth_manager)
+except spotipy.SpotifyException as e:
+    err = str(e)
+    if 'invalid redirect uri' in err.lower():
+        msg = "Invalid redirect URI: ensure SPOTIPY_REDIRECT_URI matches the URI in your Spotify app settings"
+    else:
+        msg = f"Spotify auth error: {err}"
+    logging.error(msg)
+    Notifier.notify(msg, title="SpotifyTorrent")
+    sys.exit(1)
+
 # Normalize playlist ID: support raw IDs, Spotify URIs, or URLs
 raw_id = os.getenv('SPOTIFY_PLAYLIST_ID') or ''
 if raw_id.startswith('spotify:'):
@@ -65,8 +88,13 @@ def get_tracks():
     try:
         res = sp.playlist_items(PLAYLIST_ID)
     except spotipy.SpotifyException as e:
-        logging.error(f"Spotify API error: {e}")
-        Notifier.notify("Spotify error: check your credentials and playlist ID", title="SpotifyTorrent")
+        err = str(e)
+        if 'invalid redirect uri' in err.lower():
+            msg = "Invalid redirect URI: update SPOTIPY_REDIRECT_URI to match your Spotify app configuration"
+        else:
+            msg = f"Spotify API error: {err}"
+        logging.error(msg)
+        Notifier.notify(msg, title="SpotifyTorrent")
         return []
     return [{
         'id': i['track']['id'],
