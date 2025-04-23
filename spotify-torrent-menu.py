@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os, time, json, threading, logging
 import spotipy
+import sys  # for exiting on missing config
 from spotipy.oauth2 import SpotifyOAuth
 import qbittorrentapi
 import requests
@@ -18,6 +19,15 @@ logging.basicConfig(
     format='%(asctime)s %(levelname)s:%(message)s'
 )
 
+# Verify required Spotify environment variables are set
+required_vars = ['SPOTIPY_CLIENT_ID', 'SPOTIPY_CLIENT_SECRET', 'SPOTIPY_REDIRECT_URI', 'SPOTIFY_PLAYLIST_ID']
+missing = [v for v in required_vars if not os.getenv(v)]
+if missing:
+    msg = "Missing environment variables: " + ", ".join(missing)
+    logging.error(msg)
+    Notifier.notify(msg, title="SpotifyTorrent")
+    sys.exit(1)
+
 # Spotify auth
 sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
     client_id=os.getenv('SPOTIPY_CLIENT_ID'),
@@ -25,7 +35,14 @@ sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
     redirect_uri=os.getenv('SPOTIPY_REDIRECT_URI'),
     scope="playlist-read-private playlist-modify-private"
 ))
-PLAYLIST_ID = os.getenv('SPOTIFY_PLAYLIST_ID')
+# Normalize playlist ID: support raw IDs, Spotify URIs, or URLs
+raw_id = os.getenv('SPOTIFY_PLAYLIST_ID') or ''
+if raw_id.startswith('spotify:'):
+    PLAYLIST_ID = raw_id.split(':')[-1]
+elif raw_id.startswith('http'):
+    PLAYLIST_ID = raw_id.rstrip('/').split('/')[-1]
+else:
+    PLAYLIST_ID = raw_id
 DOWNLOAD_DIR = os.getenv('DOWNLOAD_DIR')
 
 # qBittorrent
@@ -45,7 +62,12 @@ def save_downloaded():
         json.dump(list(downloaded), f)
 
 def get_tracks():
-    res = sp.playlist_items(PLAYLIST_ID)
+    try:
+        res = sp.playlist_items(PLAYLIST_ID)
+    except spotipy.SpotifyException as e:
+        logging.error(f"Spotify API error: {e}")
+        Notifier.notify("Spotify error: check your credentials and playlist ID", title="SpotifyTorrent")
+        return []
     return [{
         'id': i['track']['id'],
         'uri': i['track']['uri'],
@@ -86,11 +108,11 @@ def _sync():
     app.title = "🎧 idle"
 
 # ——— rumps App ———
-app = rumps.App("🎶")
+app = rumps.App("🎶", quit_button=None)
 app.title = "🎧 idle"
 app.menu = ["Sync Now", None, "Quit"]
 
-@app.timer(300)  # every 5m
+@rumps.timer(300)  # every 5m
 def auto_sync(_): sync_all()
 
 @rumps.clicked("Sync Now")

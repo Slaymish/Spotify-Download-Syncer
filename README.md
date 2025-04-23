@@ -6,20 +6,20 @@ A macOS menu-bar app that automatically downloads new tracks from a Spotify play
 
 ## 🚀 Features
 
-- **Auto-sync** every 5 minutes  
-- **Manual “Sync Now”** button in the menu bar  
-- **macOS notifications** for downloads ✅ and errors ❌  
-- **Logging** to `~/spotifytorrent.log`  
+- **Auto-sync** every 5 minutes
+- **Manual “Sync Now”** button in the menu bar
+- **macOS notifications** for downloads ✅ and errors ❌
+- **Logging** to `~/spotifytorrent.log`
 - **Lightweight**—built with [rumps](https://github.com/jaredks/rumps)
 
 ---
 
 ## 🛠️ Prerequisites
 
-1. **macOS**  
-2. **Python 3.9+**  
-3. **qBittorrent** with WebUI enabled (Preferences → Web UI)  
-4. **Spotify Developer App** (Client ID & Secret)  
+1. **macOS**
+2. **Python 3.9+**
+3. **qBittorrent** with WebUI enabled (Preferences → Web UI)
+4. **Spotify Developer App** (Client ID & Secret)
 
 ---
 
@@ -37,3 +37,4 @@ QB_PORT=8080
 QB_USER=your_qbittorrent_username
 QB_PASS=your_qbittorrent_password
 DOWNLOAD_DIR=/Users/youruser/Music/Downloaded
+```
