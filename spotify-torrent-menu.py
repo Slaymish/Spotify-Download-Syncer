@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 import threading, logging
 import rumps
-from pync import Notifier
+from events import event_bus
 
 from config import REDIRECT_URI, SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIFY_SCOPE, PLAYLIST_ID, DOWNLOAD_DIR
 from spotify_client import SpotifyClient
 from qb_client import QbClient
-from torrent_searchers import default_searcher as TorrentSearcher
+from config import TORRENT_SEARCHER as SEARCHER_NAME
+from torrent_searchers import create_searcher
 from state import State
 
 logging.basicConfig(
@@ -23,7 +24,8 @@ class SpotifyTorrentApp(rumps.App):
         self.sp = SpotifyClient()
         self.qb = QbClient()
         self.state = State()
-        self.searcher = TorrentSearcher
+        # instantiate torrent searcher based on config
+        self.searcher = create_searcher(SEARCHER_NAME)
 
     @rumps.timer(300)
     def auto_sync(self, _):
@@ -32,7 +34,7 @@ class SpotifyTorrentApp(rumps.App):
     @rumps.clicked("Sync Now")
     def manual_sync(self, _):
         self.sync_all()
-        rumps.notification("SpotifyTorrent", None, "Manual sync started")
+        event_bus.publish('manual_sync')
 
     @rumps.clicked("Quit")
     def quit_app(self, _):
@@ -55,14 +57,14 @@ class SpotifyTorrentApp(rumps.App):
         magnet = self.searcher.search(query)
         if not magnet:
             logging.warning(f"No torrent for {query}")
-            Notifier.notify(f"❌ {track['name']} not found", title="SpotifyTorrent")
+            event_bus.publish('torrent_not_found', query, track_name=track['name'])
             return
         self.qb.add_torrent(magnet, DOWNLOAD_DIR)
         self.sp.remove_tracks([track['uri']])
         self.state.add(track['id'])
         msg = f"✔️ {track['name']} by {track['artist']}"
         logging.info(msg)
-        Notifier.notify(msg, title="SpotifyTorrent")
+        event_bus.publish('download_success', track)
 
 if __name__ == "__main__":
     logging.basicConfig(

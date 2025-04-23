@@ -1,9 +1,10 @@
 import logging
-from typing import List, Dict
+from typing import List
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from spotipy.exceptions import SpotifyException
 from config import SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, REDIRECT_URI, SPOTIFY_SCOPE, PLAYLIST_ID
+from domain import Track
 
 class SpotifyClient:
     def __init__(self):
@@ -19,21 +20,21 @@ class SpotifyClient:
             logging.error(f"Spotify auth error: {e}")
             raise
 
-    def get_tracks(self) -> List[Dict]:
+    def get_tracks(self) -> List[Track]:
         try:
             res = self.sp.playlist_items(PLAYLIST_ID)
         except SpotifyException as e:
             logging.error(f"Spotify API error fetching tracks: {e}")
             return []
-        items = []
+        items: List[Track] = []
         for entry in res.get('items', []):
-            track = entry.get('track', {})
-            items.append({
-                'id': track.get('id'),
-                'uri': track.get('uri'),
-                'name': track.get('name'),
-                'artist': track.get('artists', [{}])[0].get('name')
-            })
+            t = entry.get('track', {}) or {}
+            items.append(Track(
+                id=t.get('id', ''),
+                uri=t.get('uri', ''),
+                name=t.get('name', ''),
+                artist=(t.get('artists', [{}])[0].get('name') if t.get('artists') else '')
+            ))
         logging.info(f"Found {len(items)} tracks in playlist")
         return items
 
