@@ -1,7 +1,7 @@
 import os, sys, logging
 from dotenv import load_dotenv
 from urllib.parse import urlparse, urlunparse
-from pync import Notifier
+# Lazy import Notifier for notifications
 
 # Load .env
 load_dotenv()
@@ -24,7 +24,11 @@ missing = [v for v in required_vars if not os.getenv(v)]
 if missing:
     msg = "Missing environment variables: " + ", ".join(missing)
     logging.error(msg)
-    Notifier.notify(msg, title="SpotifyTorrent")
+    try:
+        from pync import Notifier
+        Notifier.notify(msg, title="SpotifyTorrent")
+    except ImportError:
+        pass
     sys.exit(1)
 
 # Normalize redirect URI: use loopback IP for Spotify
