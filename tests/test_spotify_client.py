@@ -1,6 +1,6 @@
 import pytest
-from spotify_client import SpotifyClient
-from domain import Track
+from spotify_syncer.spotify_client import SpotifyClient
+from spotify_syncer.domain import Track
 
 class DummySP:
     def __init__(self):

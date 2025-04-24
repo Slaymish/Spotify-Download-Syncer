@@ -1,5 +1,5 @@
 import pytest
-from events import EventBus
+from spotify_syncer.events import EventBus
 
 class Dummy:
     def __init__(self):

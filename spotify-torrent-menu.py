@@ -3,9 +3,9 @@ spotify-torrent-menu.py: Main Rumps app for Spotify-to-Torrent menu bar synchron
 """
 import threading
 import rumps
-from events import event_bus
-from container import Container
-from config import PLAYLIST_ID, DOWNLOAD_DIR, validate_env
+from spotify_syncer.events import event_bus
+from spotify_syncer.container import Container
+from spotify_syncer.config import PLAYLIST_ID, DOWNLOAD_DIR, validate_env
 import logging
 
 logging.basicConfig(

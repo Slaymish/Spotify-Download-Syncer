@@ -6,39 +6,49 @@ A modular, extensible macOS menu-bar app that syncs a Spotify playlist to torren
 
 ## 🚀 Features
 
-- **Auto-sync** every 5 minutes (configurable)  
-- **Manual “Sync Now”** via menu  
-- **Event-driven notifications** for download success, errors, and manual sync  
-- **SQLite-backed state** (`~/.spotifytorrent.db`) for robust persistence  
-- **Plugin‑style searchers**: switch between torrent search providers via env var  
-- **Rotating logs** (`~/spotifytorrent.log`) with max file size and backups  
+- **Auto-sync** every 5 minutes (configurable)
+- **Manual “Sync Now”** via menu
+- **Event-driven notifications** for download success, errors, and manual sync
+- **SQLite-backed state** (`~/.spotifytorrent.db`) for robust persistence
+- **Plugin‑style searchers**: switch between torrent search providers via env var
+- **Rotating logs** (`~/spotifytorrent.log`) with max file size and backups
 
 ---
 
 ## 🛠️ Prerequisites
 
-- macOS with Python 3.9+  
-- [qBittorrent](https://www.qbittorrent.org/) with Web UI enabled  
-- A Spotify Developer App (Client ID & Secret)  
+- macOS with Python 3.9+
+- [qBittorrent](https://www.qbittorrent.org/) with Web UI enabled
+- A Spotify Developer App (Client ID & Secret)
 
 ---
 
 ## ⚙️ Installation
 
-1. Clone this repo:
-   ```bash
-   git clone https://github.com/yourname/Spotify-Download-Syncer.git
-   cd Spotify-Download-Syncer
-   ```
-2. Create and activate a virtual environment:
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+You can install the app either by cloning and installing locally, or via PyPI (once published).
+
+### From source (editable)
+
+```bash
+# clone and enter directory
+git clone https://github.com/yourname/Spotify-Download-Syncer.git
+cd Spotify-Download-Syncer
+
+# create venv
+python3 -m venv venv
+source venv/bin/activate
+
+# install with dev dependencies
+pip install -e .[dev]
+```
+
+This installs the `spotify-torrent-menu` script into your PATH.
+
+### From PyPI (future)
+
+```bash
+pip install spotify-syncer
+```
 
 ---
 
@@ -64,44 +74,55 @@ A modular, extensible macOS menu-bar app that syncs a Spotify playlist to torren
 ## 📂 Project Structure
 
 ```
-config.py             # Loads env, config normalization, logging setup
-domain.py             # Domain models (Track)
-events.py             # Simple in-memory EventBus
-notifications.py      # Event handlers for macOS notifications
-spotify_client.py     # Spotify Web API facade
-qb_client.py          # qBittorrent Web UI facade
-torrent_searchers.py  # TorrentSearcher interface + PirateBay impl + factory
-state.py              # SQLite persistence of downloaded track IDs
-spotify-torrent-menu.py  # Main Rumps menu-bar app wiring everything
-README.md             # Project documentation
-requirements.txt      # Python dependencies
-```
+Spotify-Download-Syncer/
+├── LICENSE
+├── README.md
+├── setup.py
+├── spotify-torrent-menu.py        # entry-point script
+├── spotify_syncer/                # core package
+│   ├── __init__.py
+│   ├── config.py
+│   ├── container.py
+│   ├── domain.py
+│   ├── events.py
+│   ├── notifications.py
+│   ├── qb_client.py
+│   ├── spotify_client.py
+│   ├── state.py
+│   └── torrent_searchers.py
+├── tests/                         # pytest suite
+│   ├── test_event_bus.py
+│   ├── test_qb_client.py
+│   ├── test_spotify_client.py
+│   ├── test_state.py
+│   └── test_torrent_searchers.py
+└── requirements.txt               # base deps (for non-editable installs)
+``` 
 
 ---
 
-## 🏛️ Architecture Overview
+## 🏷️ Packaging & Distribution
 
-1. **Dependency Injection & Factory**  
-   - `TORRENT_SEARCHER` env var picks desired searcher via `create_searcher()`  
-2. **Template Method Pattern**  
-   - `AbstractTorrentSearcher` defines the search workflow; providers implement `build_url` & `parse_primary`  
-3. **Observer Pattern**  
-   - Components communicate via `EventBus` (`download_success`, `torrent_not_found`, `manual_sync`)  
-4. **Facade Pattern**  
-   - `SpotifyClient` & `QbClient` abstract external APIs behind clean interfaces  
-5. **Domain Models**  
-   - `Track` dataclass ensures type safety and clarity  
-6. **State Repository**  
-   - `state.py` uses SQLite for durable, efficient storage  
-7. **Logging & Monitoring**  
-   - Rotating logs with clear prefixes per module  
+Build source and wheel distributions:
+
+```bash
+python setup.py sdist bdist_wheel
+``` 
+
+Install locally for testing:
+
+```bash
+pip install dist/spotify_syncer-0.1.0-py3-none-any.whl
+```
+
+Submit to PyPI once ready.
 
 ---
 
 ## ▶️ Running
 
 ```bash
-python spotify-torrent-menu.py
+spotify-torrent-menu
 ```
 
 The app will launch a menu-bar icon. Use **Sync Now** or wait for auto-sync. Notifications appear for each download or error.

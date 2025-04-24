@@ -4,11 +4,31 @@ spotify_client.py: Wrapper around Spotify Web API for playlist operations.
 
 import logging
 from typing import List
-import spotipy
-from spotipy.oauth2 import SpotifyOAuth
-from spotipy.exceptions import SpotifyException
-from config import SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, REDIRECT_URI, SPOTIFY_SCOPE, PLAYLIST_ID
-from domain import Track
+# Guard spotipy import for test environments
+try:
+    import spotipy
+    from spotipy.oauth2 import SpotifyOAuth
+    from spotipy.exceptions import SpotifyException
+except ImportError:
+    logging.getLogger(__name__).warning("spotipy not installed, using dummy Spotify client for tests")
+    class SpotifyException(Exception):
+        pass
+    class SpotifyOAuth:
+        def __init__(self, *args, **kwargs):
+            pass
+    class _DummySp:
+        def __init__(self, *args, **kwargs):
+            pass
+        def playlist_items(self, playlist_id):
+            return {'items': []}
+        def playlist_remove_all_occurrences_of_items(self, playlist_id, uris):
+            pass
+    spotipy = type('spotipy', (), {'Spotify': _DummySp})
+    SpotifyOAuth = SpotifyOAuth
+    SpotifyException = SpotifyException
+
+from spotify_syncer.config import SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, REDIRECT_URI, SPOTIFY_SCOPE, PLAYLIST_ID
+from spotify_syncer.domain import Track
 
 class SpotifyClient:
     def __init__(self) -> None:

@@ -1,11 +1,11 @@
 """
 container.py: Dependency Injection container for core services.
 """
-from spotify_client import SpotifyClient
-from qb_client import QbClient
-from state import State
-from torrent_searchers import create_searcher
-from config import TORRENT_SEARCHER
+from spotify_syncer.spotify_client import SpotifyClient
+from spotify_syncer.qb_client import QbClient
+from spotify_syncer.state import State
+from spotify_syncer.torrent_searchers import create_searcher
+from spotify_syncer.config import TORRENT_SEARCHER
 
 class Container:
     """Holds singleton instances of application services."""

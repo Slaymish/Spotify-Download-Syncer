@@ -1,5 +1,5 @@
 import pytest
-from qb_client import QbClient
+from spotify_syncer.qb_client import QbClient
 
 class DummyClient:
     def __init__(self, **kwargs):
@@ -14,8 +14,8 @@ class DummyClient:
 def patch_qb(monkeypatch):
     dummy = DummyClient()
     # Patch the qbittorrentapi.Client used in QbClient
-    import qb_client
-    monkeypatch.setattr(qb_client.qbittorrentapi, 'Client', lambda **kwargs: dummy)
+    import spotify_syncer.qb_client as qb_client_module
+    monkeypatch.setattr(qb_client_module.qbittorrentapi, 'Client', lambda **kwargs: dummy)
     return dummy
 
 

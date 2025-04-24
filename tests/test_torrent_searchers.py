@@ -1,5 +1,5 @@
 import pytest
-from torrent_searchers import create_searcher, PirateBayTorrentSearcher, AbstractTorrentSearcher
+from spotify_syncer.torrent_searchers import create_searcher, PirateBayTorrentSearcher, AbstractTorrentSearcher
 
 @pytest.mark.parametrize('name', ['piratebay', 'PirateBay', 'PIRATEBAY'])
 def test_create_searcher_alias(name):

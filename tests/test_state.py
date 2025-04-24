@@ -1,6 +1,6 @@
 import pytest
 import os
-from state import State
+from spotify_syncer.state import State
 
 def test_state_persistence(tmp_path):
     db_file = tmp_path / "test.db"

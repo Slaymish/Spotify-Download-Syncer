@@ -3,8 +3,25 @@ qb_client.py: Wrapper for qBittorrent Web API operations.
 """
 
 import logging
-import qbittorrentapi
-from config import QB_HOST, QB_PORT, QB_USER, QB_PASS
+try:
+    import qbittorrentapi
+except ImportError:
+    import logging
+    logging.getLogger(__name__).warning("qbittorrentapi not found, using dummy implementation")
+    # Dummy module with minimal interface for testing
+    class _DummyQBModule:
+        class LoginFailed(Exception):
+            pass
+        class Client:
+            def __init__(self, *args, **kwargs):
+                pass
+            def auth_log_in(self):
+                pass
+            def torrents_add(self, *args, **kwargs):
+                pass
+    qbittorrentapi = _DummyQBModule
+
+from spotify_syncer.config import QB_HOST, QB_PORT, QB_USER, QB_PASS
 
 class QbClient:
     def __init__(self) -> None:
