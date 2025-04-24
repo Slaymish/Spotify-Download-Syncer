@@ -1,3 +1,7 @@
+"""
+spotify_client.py: Wrapper around Spotify Web API for playlist operations.
+"""
+
 import logging
 from typing import List
 import spotipy
@@ -7,7 +11,7 @@ from config import SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, REDIRECT_URI, SPOTI
 from domain import Track
 
 class SpotifyClient:
-    def __init__(self):
+    def __init__(self) -> None:
         try:
             auth_manager = SpotifyOAuth(
                 client_id=SPOTIPY_CLIENT_ID,
@@ -21,6 +25,7 @@ class SpotifyClient:
             raise
 
     def get_tracks(self) -> List[Track]:
+        """Fetch current playlist items and return a list of Track objects."""
         try:
             res = self.sp.playlist_items(PLAYLIST_ID)
         except SpotifyException as e:
@@ -38,7 +43,8 @@ class SpotifyClient:
         logging.info(f"Found {len(items)} tracks in playlist")
         return items
 
-    def remove_tracks(self, uris: List[str]):
+    def remove_tracks(self, uris: List[str]) -> None:
+        """Remove tracks (by URI) from the configured playlist."""
         try:
             self.sp.playlist_remove_all_occurrences_of_items(PLAYLIST_ID, uris)
             logging.info(f"Removed {len(uris)} tracks from playlist")

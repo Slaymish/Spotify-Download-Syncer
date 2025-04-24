@@ -1,3 +1,7 @@
+"""
+Domain models for SpotifyTorrent application.
+"""
+
 from dataclasses import dataclass
 
 @dataclass(frozen=True)

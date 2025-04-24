@@ -1,3 +1,5 @@
+"""In-memory event bus for decoupling components via publish/subscribe pattern."""
+
 from typing import Callable, Dict, List
 import logging
 

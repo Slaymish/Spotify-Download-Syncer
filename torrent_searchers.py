@@ -1,96 +1,99 @@
-import logging, re, requests
+"""
+torrent_searchers.py: Defines the TorrentSearcher interface and implementations.
+"""
+
+import logging
+import re
+import requests
+from abc import ABC, abstractmethod
+from typing import Optional, Type, Dict
 from bs4 import BeautifulSoup
 from urllib.parse import quote_plus
 from pync import Notifier
-from abc import ABC, abstractmethod
-from typing import Optional
 
 class AbstractTorrentSearcher(ABC):
-    """Template Method for torrent searchers."""
+    """Template method pattern: search flow for torrent providers."""
     def search(self, query: str) -> Optional[str]:
+        """Execute the full search: sanitize, fetch, parse, fallback, notify."""
         sanitized = self.sanitize(query)
         url = self.build_url(sanitized)
         content = self.fetch(url)
         if not content:
             return None
-        result = self.parse_primary(content)
-        if result:
-            return result
-        result = self.parse_fallback(content)
-        if result:
-            return result
+        primary = self.parse_primary(content)
+        if primary:
+            return primary
+        fallback = self.parse_fallback(content)
+        if fallback:
+            return fallback
         self.notify_not_found(query, url)
         return None
 
     def sanitize(self, query: str) -> str:
-        import re, logging
-        sanitized = re.sub(r"[\"',\.\-()]", "", query)
+        """Remove problematic punctuation from the query."""
+        sanitized = re.sub(r"[\"',.\-()]", "", query)
         if sanitized != query:
-            logging.info(f"Sanitized query: '{query}' → '{sanitized}'")
+            logging.getLogger(__name__).info(f"Sanitized query: '{query}' → '{sanitized}'")
         return sanitized
 
     def fetch(self, url: str) -> Optional[str]:
-        import requests, logging
-        from requests.exceptions import RequestException
+        """Fetch the page content, returning text or None on error."""
         try:
             r = requests.get(url, timeout=10)
             r.raise_for_status()
             return r.text
-        except RequestException as e:
-            logging.error(f"Network error searching '{url}': {e}")
-            from pync import Notifier
-            Notifier.notify(f"Network error finding torrent", title="SpotifyTorrent")
+        except requests.RequestException as e:
+            logging.getLogger(__name__).error(f"Network error searching '{url}': {e}")
+            Notifier.notify("Network error finding torrent", title="SpotifyTorrent")
             return None
 
     @abstractmethod
     def build_url(self, query: str) -> str:
-        pass
+        """Construct the search URL for the provider."""
+        ...
 
     @abstractmethod
     def parse_primary(self, content: str) -> Optional[str]:
-        pass
+        """Parse the primary magnet link from page content."""
+        ...
 
     def parse_fallback(self, content: str) -> Optional[str]:
-        from bs4 import BeautifulSoup
-        import logging
+        """Fallback: return first magnet link found, if any."""
         soup = BeautifulSoup(content, "html.parser")
-        fallback = soup.select_one('a[href^="magnet:"]')
-        if fallback and fallback.has_attr('href'):
-            logging.warning("Fallback magnet link used")
-            return fallback['href']
+        link = soup.select_one('a[href^="magnet:"]')
+        if link and link.has_attr('href'):
+            logging.getLogger(__name__).warning("Fallback magnet link used")
+            return link['href']
         return None
 
-    def notify_not_found(self, query: str, url: str):
-        import logging
-        from pync import Notifier
-        logging.warning(f"No magnet link found for '{query}' at {url}")
+    def notify_not_found(self, query: str, url: str) -> None:
+        """Log and notify when no magnet link is found."""
+        logging.getLogger(__name__).warning(f"No magnet link found for '{query}' at {url}")
         Notifier.notify(f"No torrent found for '{query}'", title="SpotifyTorrent")
 
 class PirateBayTorrentSearcher(AbstractTorrentSearcher):
-    def __init__(self, category: str = "101"):
+    """Concrete TorrentSearcher for The Pirate Bay (music category)."""
+    def __init__(self, category: str = "101") -> None:
         self.base_url = "https://thepiratebay.org/search.php"
         self.category = category
 
     def build_url(self, query: str) -> str:
-        from urllib.parse import quote_plus
         return f"{self.base_url}?q={quote_plus(query)}&cat={self.category}"
 
     def parse_primary(self, content: str) -> Optional[str]:
-        from bs4 import BeautifulSoup
         soup = BeautifulSoup(content, "html.parser")
-        mag = soup.select_one('ol#torrents li.list-entry span.item-icons a[href^="magnet:"]')
-        return mag['href'] if mag and mag.has_attr('href') else None
+        link = soup.select_one('ol#torrents li.list-entry span.item-icons a[href^="magnet:"]')
+        return link['href'] if link and link.has_attr('href') else None
 
-# Searcher registry and factory
-_registry = {
+# Registry of available searchers
+_searcher_registry: Dict[str, Type[AbstractTorrentSearcher]] = {
     'piratebay': PirateBayTorrentSearcher,
-    # add new searcher implementations here, e.g. 'othersite': OtherSiteSearcher
+    # add new searchers here
 }
 
-def create_searcher(name: str) -> TorrentSearcher:
-    """Factory: create a TorrentSearcher by registry key."""
-    try:
-        cls = _registry[name.lower()]
-    except KeyError:
+def create_searcher(name: str) -> AbstractTorrentSearcher:
+    """Factory: instantiate a TorrentSearcher by key."""
+    key = name.lower()
+    if key not in _searcher_registry:
         raise ValueError(f"Unknown torrent searcher '{name}'")
-    return cls()
+    return _searcher_registry[key]()

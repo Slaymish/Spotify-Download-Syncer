@@ -5,6 +5,18 @@ from pync import Notifier
 
 # Load .env
 load_dotenv()
+# --- Logging configuration ---
+from logging.handlers import RotatingFileHandler
+
+# log file with rotation
+LOG_FILE = os.path.expanduser('~/spotifytorrent.log')
+handler = RotatingFileHandler(LOG_FILE, maxBytes=5*1024*1024, backupCount=3)
+formatter = logging.Formatter('%(asctime)s %(levelname)s:%(name)s:%(message)s')
+handler.setFormatter(formatter)
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+logger.addHandler(handler)
+# --- end logging configuration ---
 
 # Required vars
 required_vars = ['SPOTIPY_CLIENT_ID', 'SPOTIPY_CLIENT_SECRET', 'SPOTIPY_REDIRECT_URI', 'SPOTIFY_PLAYLIST_ID', 'DOWNLOAD_DIR', 'QB_HOST', 'QB_PORT', 'QB_USER', 'QB_PASS']
