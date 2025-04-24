@@ -12,6 +12,7 @@ A macOS menu-bar app that syncs a Spotify playlist to Soulseek or torrent downlo
 ## Quick Start
 
 1. **Install the app**:
+
    ```bash
    git clone https://github.com/Slaymish/Spotify-Download-Syncer.git
    cd Spotify-Download-Syncer
@@ -22,6 +23,7 @@ A macOS menu-bar app that syncs a Spotify playlist to Soulseek or torrent downlo
 
 2. **Configure the app**:
    Create a `.env` file in the project root:
+
    ```dotenv
    SPOTIPY_CLIENT_ID=YOUR_SPOTIFY_CLIENT_ID
    SPOTIPY_CLIENT_SECRET=YOUR_SPOTIFY_CLIENT_SECRET
@@ -33,7 +35,9 @@ A macOS menu-bar app that syncs a Spotify playlist to Soulseek or torrent downlo
    QB_PASS=YOUR_QBITTORRENT_PASS
    DOWNLOAD_DIR=/Users/you/Music/Downloads
    TORRENT_SEARCHER=soulseek    # Set to 'piratebay' or 'soulseek'
-   
+
+   DELETE_AFTER_DOWNLOADED=false  # (keeps tracks in playlist after download)
+
    # Only needed for Soulseek
    SOULSEEK_ACCOUNT=YOUR_SOULSEEK_USERNAME
    SOULSEEK_PASSWORD=YOUR_SOULSEEK_PASSWORD
@@ -43,6 +47,7 @@ A macOS menu-bar app that syncs a Spotify playlist to Soulseek or torrent downlo
    Add `http://127.0.0.1:8888/callback` to your Spotify Developer Dashboard under **Edit Settings → Redirect URIs**
 
 4. **Run the app**:
+
    ```bash
    python spotify-torrent-menu.py
    ```

@@ -5,7 +5,7 @@ import threading
 import rumps
 from spotify_syncer.events import event_bus
 from spotify_syncer.container import Container
-from spotify_syncer.config import PLAYLIST_ID, DOWNLOAD_DIR, validate_env
+from spotify_syncer.config import PLAYLIST_ID, DOWNLOAD_DIR, validate_env, DELETE_AFTER_DOWNLOADED
 import logging
 
 logging.basicConfig(
@@ -93,8 +93,10 @@ class SpotifyTorrentApp(rumps.App):
             # do not remove track or mark as downloaded
             event_bus.publish('download_failed', track)
             return
-        # on success, remove from playlist and persist state
-        self.sp.remove_tracks([track.uri])
+        # on success, optionally remove from playlist and persist state
+        if DELETE_AFTER_DOWNLOADED:
+            self.sp.remove_tracks([track.uri])
+            logging.info(f"Removed track from playlist: {track.name} by {track.artist}")
         self.state.add(track.id)
         msg = f"✔️ {track.name} by {track.artist}"
         logging.info(msg)

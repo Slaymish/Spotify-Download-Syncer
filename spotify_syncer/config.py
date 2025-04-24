@@ -78,3 +78,6 @@ QB_USER = os.getenv('QB_USER')
 QB_PASS = os.getenv('QB_PASS')
 # Torrent searcher selection (supports 'piratebay', etc.)
 TORRENT_SEARCHER = os.getenv('TORRENT_SEARCHER', 'soulseek').strip()
+
+# Delete after downloaded toggle
+DELETE_AFTER_DOWNLOADED = os.getenv('DELETE_AFTER_DOWNLOADED', 'true').strip().lower() in ('1', 'true', 'yes')
