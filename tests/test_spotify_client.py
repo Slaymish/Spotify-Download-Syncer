@@ -39,3 +39,21 @@ def test_remove_tracks(monkeypatch):
     client.sp = dummy_sp
     client.remove_tracks(['uri1', 'uri2'])
     assert dummy_sp.removed == ['uri1', 'uri2']
+
+def test_get_tracks_error(monkeypatch):
+    client = SpotifyClient()
+    class DummySP:
+        def playlist_items(self, playlist_id):
+            raise Exception("API fail")
+    client.sp = DummySP()
+    tracks = client.get_tracks()
+    assert tracks == []
+
+def test_remove_tracks_error(monkeypatch):
+    client = SpotifyClient()
+    class DummySP:
+        def playlist_remove_all_occurrences_of_items(self, playlist_id, uris):
+            raise Exception("API fail")
+    client.sp = DummySP()
+    # Should not raise
+    client.remove_tracks(['uri1'])
