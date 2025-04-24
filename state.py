@@ -3,7 +3,8 @@
 import os
 import sqlite3, logging
 
-type OptionalSet = set[str]
+# Alias for downloaded set type
+OptionalSet = set[str]
 
 class State:
     def __init__(self, db_path: str | None = None) -> None:

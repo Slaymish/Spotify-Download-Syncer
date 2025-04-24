@@ -9,7 +9,6 @@ from abc import ABC, abstractmethod
 from typing import Optional, Type, Dict
 from bs4 import BeautifulSoup
 from urllib.parse import quote_plus
-from pync import Notifier
 
 class AbstractTorrentSearcher(ABC):
     """Template method pattern: search flow for torrent providers."""
@@ -44,7 +43,11 @@ class AbstractTorrentSearcher(ABC):
             return r.text
         except requests.RequestException as e:
             logging.getLogger(__name__).error(f"Network error searching '{url}': {e}")
-            Notifier.notify("Network error finding torrent", title="SpotifyTorrent")
+            try:
+                from pync import Notifier
+                Notifier.notify("Network error finding torrent", title="SpotifyTorrent")
+            except ImportError:
+                pass
             return None
 
     @abstractmethod
@@ -69,7 +72,11 @@ class AbstractTorrentSearcher(ABC):
     def notify_not_found(self, query: str, url: str) -> None:
         """Log and notify when no magnet link is found."""
         logging.getLogger(__name__).warning(f"No magnet link found for '{query}' at {url}")
-        Notifier.notify(f"No torrent found for '{query}'", title="SpotifyTorrent")
+        try:
+            from pync import Notifier
+            Notifier.notify(f"No torrent found for '{query}'", title="SpotifyTorrent")
+        except ImportError:
+            pass
 
 class PirateBayTorrentSearcher(AbstractTorrentSearcher):
     """Concrete TorrentSearcher for The Pirate Bay (music category)."""
