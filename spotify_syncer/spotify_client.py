@@ -48,7 +48,7 @@ class SpotifyClient:
         """Fetch current playlist items and return a list of Track objects."""
         try:
             res = self.sp.playlist_items(PLAYLIST_ID)
-        except SpotifyException as e:
+        except Exception as e:
             logging.error(f"Spotify API error fetching tracks: {e}")
             return []
         items: List[Track] = []
@@ -68,5 +68,5 @@ class SpotifyClient:
         try:
             self.sp.playlist_remove_all_occurrences_of_items(PLAYLIST_ID, uris)
             logging.info(f"Removed {len(uris)} tracks from playlist")
-        except SpotifyException as e:
+        except Exception as e:
             logging.error(f"Spotify API error removing tracks: {e}")
