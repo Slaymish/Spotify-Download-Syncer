@@ -1,10 +1,8 @@
 import os, sys, logging
-from dotenv import load_dotenv
 from urllib.parse import urlparse, urlunparse
+from dotenv import load_dotenv, find_dotenv
 # Lazy import Notifier for notifications
 
-# Load .env
-load_dotenv()
 # --- Logging configuration ---
 from logging.handlers import RotatingFileHandler
 
@@ -16,7 +14,15 @@ handler.setFormatter(formatter)
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 logger.addHandler(handler)
-# --- end logging configuration ---
+
+# Load .env now that logging is configured
+dotenv_path = find_dotenv()
+if dotenv_path:
+    load_dotenv(dotenv_path)
+    logging.getLogger(__name__).info(f"Loaded environment variables from {dotenv_path}")
+else:
+    logging.getLogger(__name__).warning("No .env file found; defaults and shell env will be used.")
+ # --- end logging configuration ---
 
 def validate_env() -> None:
     """Ensure required environment variables are set; exit if any are missing."""
@@ -71,4 +77,4 @@ QB_PORT = os.getenv('QB_PORT')
 QB_USER = os.getenv('QB_USER')
 QB_PASS = os.getenv('QB_PASS')
 # Torrent searcher selection (supports 'piratebay', etc.)
-TORRENT_SEARCHER = os.getenv('TORRENT_SEARCHER', 'piratebay')
+TORRENT_SEARCHER = os.getenv('TORRENT_SEARCHER', 'soulseek').strip()

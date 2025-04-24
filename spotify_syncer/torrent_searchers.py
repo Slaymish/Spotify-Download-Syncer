@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, Type, Dict
 from bs4 import BeautifulSoup
 from urllib.parse import quote_plus
-import subprocess, os
+import subprocess, os, shutil
 from spotify_syncer.config import DOWNLOAD_DIR
  
 class AbstractTorrentSearcher(ABC):
@@ -136,6 +136,12 @@ class SoulseekSearcher(AbstractTorrentSearcher):
 
     def search(self, query: str) -> Optional[str]:
         """Use soulseek to download the first matching file, return a file URI."""
+        # verify soulseek CLI is available
+        if not shutil.which("soulseek"):
+            logging.getLogger(__name__).error(
+                "Soulseek CLI not found. Please install with 'npm install -g soulseek-cli'"
+            )
+            return None
         sanitized = self.sanitize(query)
         # snapshot directory before download
         try:
@@ -163,6 +169,7 @@ class SoulseekSearcher(AbstractTorrentSearcher):
         return None
 
  # Registry of available searchers
+
 _searcher_registry: Dict[str, Type[AbstractTorrentSearcher]] = {
     'piratebay': PirateBayTorrentSearcher,
     'soulseek': SoulseekSearcher,
