@@ -38,10 +38,12 @@ class QbClient:
             logging.getLogger(__name__).error(f"Authentication failed for qBittorrent: {e}")
             raise
 
-    def add_torrent(self, magnet_uri: str, save_path: str) -> None:
+    def add_torrent(self, magnet_uri: str, save_path: str) -> bool:
         """Add a torrent via magnet URI and specify the save path."""
         try:
             self.client.torrents_add(urls=magnet_uri, save_path=save_path)
             logging.getLogger(__name__).info(f"Added torrent: {magnet_uri}")
+            return True
         except Exception as e:
             logging.getLogger(__name__).error(f"Error adding torrent {magnet_uri}: {e}")
+            return False

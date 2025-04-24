@@ -84,6 +84,36 @@ class PirateBayTorrentSearcher(AbstractTorrentSearcher):
         self.base_url = "https://thepiratebay.org/search.php"
         self.category = category
 
+    def search(self, query: str) -> Optional[str]:
+        """Search via HTML first, then fallback to JSON API if no magnet found."""
+        sanitized = self.sanitize(query)
+        url = self.build_url(sanitized)
+        content = self.fetch(url)
+        if not content:
+            return None
+        # Try HTML parsing
+        primary = self.parse_primary(content)
+        if primary:
+            return primary
+        # Fallback to JSON API (apibay.org)
+        api_url = f"https://apibay.org/q.php?q={quote_plus(sanitized)}&cat={self.category}"
+        try:
+            r = requests.get(api_url, timeout=10)
+            r.raise_for_status()
+            data = r.json()
+            if isinstance(data, list) and data:
+                info_hash = data[0].get('info_hash')
+                if info_hash:
+                    return f"magnet:?xt=urn:btih:{info_hash}"
+        except requests.RequestException as e:
+            logging.getLogger(__name__).warning(f"JSON API error searching '{api_url}': {e}")
+        # HTML fallback
+        fallback = self.parse_fallback(content)
+        if fallback:
+            return fallback
+        self.notify_not_found(query, url)
+        return None
+
     def build_url(self, query: str) -> str:
         return f"{self.base_url}?q={quote_plus(query)}&cat={self.category}"
 

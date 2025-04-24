@@ -19,7 +19,7 @@ class SpotifyTorrentApp(rumps.App):
         """Initialize the menu bar UI and services via DI container."""
         super().__init__("🎶", quit_button=None)
         self.title = "🎧 idle"
-        self.menu = ["Sync Now", None, "Quit"]
+        self.menu = ["Sync Now", "Clear State", None, "Quit"]
         container = Container()
         self.sp = container.spotify_client
         self.qb = container.qb_client
@@ -42,18 +42,32 @@ class SpotifyTorrentApp(rumps.App):
         """Handler for Quit menu item."""
         rumps.quit_application()
 
+    @rumps.clicked("Clear State")
+    def clear_state(self, sender) -> None:
+        """Handler to clear all downloaded state records."""
+        self.state.clear()
+        logging.info("Downloaded state cleared via menu")
+        rumps.notification("SpotifyTorrent", None, "Cleared downloaded state database.")
+
     def sync_all(self):
         """Spawn a background thread to perform sync."""
         threading.Thread(target=self._sync, daemon=True).start()
 
     def _sync(self):
-        """Core synchronization logic: fetch tracks, download and remove."""
-        self.title = "🔄 syncing..."
-        tracks = self.sp.get_tracks()
-        for track in tracks:
-            if track.id not in self.state.downloaded:
-                self._process_one(track)
-        self.title = "🎧 idle"
+        """Core synchronization logic: fetch tracks, download and remove with error handling."""
+        logging.info("Sync started")
+        try:
+            self.title = "🔄 syncing..."
+            tracks = self.sp.get_tracks()
+            for track in tracks:
+                if track.id not in self.state.downloaded:
+                    self._process_one(track)
+                else:
+                    logging.info(f"Skipping already downloaded track: {track.name} by {track.artist}")
+            self.title = "🎧 idle"
+            logging.info("Sync finished")
+        except Exception:
+            logging.exception("Exception occurred during sync")
 
     def _process_one(self, track):
         """Process a single track: search, download, notify, and remove."""
@@ -64,7 +78,22 @@ class SpotifyTorrentApp(rumps.App):
             logging.warning(f"No torrent for {query}")
             event_bus.publish('torrent_not_found', query, track_name=track.name)
             return
-        self.qb.add_torrent(magnet, DOWNLOAD_DIR)
+        # validate magnet URI info-hash
+        import re
+        m = re.search(r"xt=urn:btih:([0-9A-Fa-f]+)", magnet)
+        if not m or len(m.group(1)) != 40 or m.group(1).lower() == '0' * 40:
+            logging.error(f"Invalid or missing info-hash in magnet URI: {magnet}")
+            # do not remove track or mark as downloaded
+            event_bus.publish('download_failed', track)
+            return
+        # attempt to add torrent and only proceed on success
+        added = self.qb.add_torrent(magnet, DOWNLOAD_DIR)
+        if not added:
+            logging.error(f"Failed to add torrent, missing info-hash from URI: {magnet}")
+            # do not remove track or mark as downloaded
+            event_bus.publish('download_failed', track)
+            return
+        # on success, remove from playlist and persist state
         self.sp.remove_tracks([track.uri])
         self.state.add(track.id)
         msg = f"✔️ {track.name} by {track.artist}"

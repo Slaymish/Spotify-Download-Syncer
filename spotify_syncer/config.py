@@ -64,7 +64,7 @@ else:
 # Other config values
 SPOTIPY_CLIENT_ID = os.getenv('SPOTIPY_CLIENT_ID')
 SPOTIPY_CLIENT_SECRET = os.getenv('SPOTIPY_CLIENT_SECRET')
-SPOTIFY_SCOPE = "playlist-read-private playlist-modify-private"
+SPOTIFY_SCOPE = "playlist-read-private playlist-modify-private playlist-modify-public"
 DOWNLOAD_DIR = os.getenv('DOWNLOAD_DIR')
 QB_HOST = os.getenv('QB_HOST')
 QB_PORT = os.getenv('QB_PORT')
