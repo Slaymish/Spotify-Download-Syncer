@@ -19,12 +19,18 @@ class SpotifyTorrentApp(rumps.App):
         """Initialize the menu bar UI and services via DI container."""
         super().__init__("🎶", quit_button=None)
         self.title = "🎧 idle"
-        self.menu = ["Sync Now", "Clear State", None, "Quit"]
+        self.menu = ["Sync Now", "Open Logs", "Clear State", None, "Quit"]
         container = Container()
         self.sp = container.spotify_client
         self.qb = container.qb_client
         self.state = container.state
         self.searcher = container.searcher
+
+    @rumps.clicked("Open Logs")
+    def open_logs(self, sender):
+        import subprocess, os
+        log_path = os.path.expanduser('~/spotifytorrent.log')
+        subprocess.Popen(["open", log_path])
 
     @rumps.timer(300)
     def auto_sync(self, sender) -> None:
@@ -78,14 +84,6 @@ class SpotifyTorrentApp(rumps.App):
             logging.warning(f"No torrent for {query}")
             event_bus.publish('torrent_not_found', query, track_name=track.name)
             return
-        # validate magnet URI info-hash
-        import re
-        m = re.search(r"xt=urn:btih:([0-9A-Fa-f]+)", magnet)
-        if not m or len(m.group(1)) != 40 or m.group(1).lower() == '0' * 40:
-            logging.error(f"Invalid or missing info-hash in magnet URI: {magnet}")
-            # do not remove track or mark as downloaded
-            event_bus.publish('download_failed', track)
-            return
         # attempt to add torrent and only proceed on success
         added = self.qb.add_torrent(magnet, DOWNLOAD_DIR)
         if not added:
@@ -96,7 +94,6 @@ class SpotifyTorrentApp(rumps.App):
         # on success, optionally remove from playlist and persist state
         if DELETE_AFTER_DOWNLOADED:
             self.sp.remove_tracks([track.uri])
-            logging.info(f"Removed track from playlist: {track.name} by {track.artist}")
         self.state.add(track.id)
         msg = f"✔️ {track.name} by {track.artist}"
         logging.info(msg)

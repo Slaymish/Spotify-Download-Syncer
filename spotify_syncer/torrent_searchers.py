@@ -125,30 +125,55 @@ class PirateBayTorrentSearcher(AbstractTorrentSearcher):
         return link['href'] if link and link.has_attr('href') else None
 
 class SoulseekSearcher(AbstractTorrentSearcher):
-    """Search and download via Soulseek network using soulseek-cli."""
+    """Search and download via Soulseek network using soulseek-cli with progressive fallback and fast query check."""
     def build_url(self, query: str) -> str:
-        # Not used for Soulseek CLI
         return ''
 
     def parse_primary(self, content: str) -> Optional[str]:
-        # Not applicable
         return None
 
     def search(self, query: str) -> Optional[str]:
-        # verify soulseek CLI is available
         if not shutil.which("soulseek"):
             logging.getLogger(__name__).error(
                 "Soulseek CLI not found. Please install with 'npm install -g soulseek-cli'"
             )
             return None
         sanitized = self.sanitize(query)
-        # snapshot directory before download
-        def try_download(q):
+        queries = [sanitized]
+        if '(' in sanitized:
+            queries.append(sanitized.split('(')[0].strip())
+        if '-' in sanitized:
+            queries.append(sanitized.split('-')[0].strip())
+        if ' by ' in sanitized:
+            queries.append(sanitized.split(' by ')[0].strip())
+        queries.append(' '.join(sanitized.split()[:3]))
+        queries.append(' '.join(sorted(set(sanitized.split()), key=sanitized.split().index)))
+        seen = set()
+        queries = [q for q in queries if q and not (q in seen or seen.add(q))]
+        modes = ['mp3', 'flac']
+        qualities = ['320', '256', '192', None]
+        def has_results(q, mode, quality):
+            cmd = ["soulseek", "query", q]
+            if mode:
+                cmd += ["--mode", mode]
+            if quality:
+                cmd += ["--quality", quality]
+            try:
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                return result.returncode == 0
+            except Exception as e:
+                logging.getLogger(__name__).error(f"Soulseek query failed for '{q}': {e}")
+                return False
+        def try_download(q, mode, quality):
             try:
                 before = set(os.listdir(DOWNLOAD_DIR))
             except OSError:
                 before = set()
             cmd = ["soulseek", "download", q, "--destination", DOWNLOAD_DIR]
+            if mode:
+                cmd += ["--mode", mode]
+            if quality:
+                cmd += ["--quality", quality]
             try:
                 subprocess.run(cmd, check=True, capture_output=True, text=True)
             except Exception as e:
@@ -164,25 +189,12 @@ class SoulseekSearcher(AbstractTorrentSearcher):
             except OSError as e:
                 logging.getLogger(__name__).error(f"Error scanning download directory: {e}")
             return None
-        # Try full query first
-        result = try_download(sanitized)
-        if result:
-            return result
-        # Fallback: try only the track name (before artist)
-        # Heuristic: split on ' by ', ' - ', or last space
-        fallback_query = sanitized
-        for sep in [' by ', ' - ', ' – ', ' — ']:
-            if sep in sanitized:
-                fallback_query = sanitized.split(sep)[0]
-                break
-        else:
-            # fallback to first 3 words if no separator
-            fallback_query = ' '.join(sanitized.split()[:3])
-        if fallback_query != sanitized:
-            logging.getLogger(__name__).info(f"Soulseek fallback search with: {fallback_query}")
-            result = try_download(fallback_query)
-            if result:
-                return result
+        for q in queries:
+            for mode in modes:
+                for quality in qualities:
+                    logging.getLogger(__name__).info(f"Soulseek search: '{q}' mode={mode} quality={quality}")
+                    if has_results(q, mode, quality):
+                        return try_download(q, mode, quality)
         return None
 
  # Registry of available searchers
