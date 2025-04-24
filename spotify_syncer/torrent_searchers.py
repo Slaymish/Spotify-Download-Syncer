@@ -135,7 +135,6 @@ class SoulseekSearcher(AbstractTorrentSearcher):
         return None
 
     def search(self, query: str) -> Optional[str]:
-        """Use soulseek to download the first matching file, return a file URI."""
         # verify soulseek CLI is available
         if not shutil.which("soulseek"):
             logging.getLogger(__name__).error(
@@ -144,28 +143,46 @@ class SoulseekSearcher(AbstractTorrentSearcher):
             return None
         sanitized = self.sanitize(query)
         # snapshot directory before download
-        try:
-            before = set(os.listdir(DOWNLOAD_DIR))
-        except OSError:
-            before = set()
-        cmd = ["soulseek", "download", sanitized, "--destination", DOWNLOAD_DIR]
-        try:
-            subprocess.run(cmd, check=True, capture_output=True, text=True)
-        except Exception as e:
-            logging.getLogger(__name__).error(f"Soulseek download failed for '{query}': {e}")
+        def try_download(q):
+            try:
+                before = set(os.listdir(DOWNLOAD_DIR))
+            except OSError:
+                before = set()
+            cmd = ["soulseek", "download", q, "--destination", DOWNLOAD_DIR]
+            try:
+                subprocess.run(cmd, check=True, capture_output=True, text=True)
+            except Exception as e:
+                return None
+            try:
+                after = set(os.listdir(DOWNLOAD_DIR))
+                new_files = after - before
+                if new_files:
+                    fname = sorted(new_files)[0]
+                    filepath = os.path.join(DOWNLOAD_DIR, fname)
+                    logging.getLogger(__name__).info(f"Soulseek downloaded file: {filepath}")
+                    return f"file://{filepath}"
+            except OSError as e:
+                logging.getLogger(__name__).error(f"Error scanning download directory: {e}")
             return None
-        # detect newly downloaded file
-        try:
-            after = set(os.listdir(DOWNLOAD_DIR))
-            new_files = after - before
-            if new_files:
-                # pick the first new file
-                fname = sorted(new_files)[0]
-                filepath = os.path.join(DOWNLOAD_DIR, fname)
-                logging.getLogger(__name__).info(f"Soulseek downloaded file: {filepath}")
-                return f"file://{filepath}"
-        except OSError as e:
-            logging.getLogger(__name__).error(f"Error scanning download directory: {e}")
+        # Try full query first
+        result = try_download(sanitized)
+        if result:
+            return result
+        # Fallback: try only the track name (before artist)
+        # Heuristic: split on ' by ', ' - ', or last space
+        fallback_query = sanitized
+        for sep in [' by ', ' - ', ' – ', ' — ']:
+            if sep in sanitized:
+                fallback_query = sanitized.split(sep)[0]
+                break
+        else:
+            # fallback to first 3 words if no separator
+            fallback_query = ' '.join(sanitized.split()[:3])
+        if fallback_query != sanitized:
+            logging.getLogger(__name__).info(f"Soulseek fallback search with: {fallback_query}")
+            result = try_download(fallback_query)
+            if result:
+                return result
         return None
 
  # Registry of available searchers
@@ -178,7 +195,7 @@ _searcher_registry: Dict[str, Type[AbstractTorrentSearcher]] = {
 
 def create_searcher(name: str) -> AbstractTorrentSearcher:
      """Factory: instantiate a TorrentSearcher by key."""
-     key = name.lower()
+     key = name.lower().strip()
      if key not in _searcher_registry:
          raise ValueError(f"Unknown torrent searcher '{name}'")
      return _searcher_registry[key]()
