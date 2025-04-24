@@ -17,9 +17,10 @@ A modular, extensible macOS menu-bar app that syncs a Spotify playlist to torren
 
 ## 🛠️ Prerequisites
 
-- macOS with Python 3.9+
-- [qBittorrent](https://www.qbittorrent.org/) with Web UI enabled
-- A Spotify Developer App (Client ID & Secret)
+ - macOS with Python 3.9+
+ - [qBittorrent](https://www.qbittorrent.org/) with Web UI enabled
+ - A Spotify Developer App (Client ID & Secret)
+ - [soulseek-cli](https://github.com/ejurgensen/soulseek-cli) installed (e.g., `brew install soulseek-cli`) for Soulseek searcher support
 
 ---
 
@@ -126,6 +127,25 @@ spotify-torrent-menu
 ```
 
 The app will launch a menu-bar icon. Use **Sync Now** or wait for auto-sync. Notifications appear for each download or error.
+
+---
+
+## 🕹️ Launch on Login
+
+To start SpotifyTorrent automatically when you log in on macOS:
+
+1. Ensure the `spotify-torrent-menu` script is installed in your PATH (e.g., via `pip install -e .`).
+2. Open **System Settings → General → Login Items**.
+3. Under **Open at Login**, click the **+** button and select the `spotify-torrent-menu` executable (usually in `/usr/local/bin/spotify-torrent-menu` or your virtualenv's bin folder).
+4. (Optional) Check **Hide** to launch the app hidden on startup.
+
+Alternatively, you can wrap the script in an Automator application:
+   1. Open **Automator** and create a new **Application**.
+   2. Add a **Run Shell Script** action with the command:
+      ```bash
+      spotify-torrent-menu
+      ```
+   3. Save the Automator app (e.g., `SpotifyTorrentLauncher.app`) and add it to **Login Items** instead of the script.
 
 ---
 

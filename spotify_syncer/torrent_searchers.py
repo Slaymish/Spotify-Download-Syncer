@@ -9,7 +9,9 @@ from abc import ABC, abstractmethod
 from typing import Optional, Type, Dict
 from bs4 import BeautifulSoup
 from urllib.parse import quote_plus
-
+import subprocess, os
+from spotify_syncer.config import DOWNLOAD_DIR
+ 
 class AbstractTorrentSearcher(ABC):
     """Template method pattern: search flow for torrent providers."""
     def search(self, query: str) -> Optional[str]:
@@ -122,15 +124,54 @@ class PirateBayTorrentSearcher(AbstractTorrentSearcher):
         link = soup.select_one('ol#torrents li.list-entry span.item-icons a[href^="magnet:"]')
         return link['href'] if link and link.has_attr('href') else None
 
-# Registry of available searchers
+class SoulseekSearcher(AbstractTorrentSearcher):
+    """Search and download via Soulseek network using soulseek-cli."""
+    def build_url(self, query: str) -> str:
+        # Not used for Soulseek CLI
+        return ''
+
+    def parse_primary(self, content: str) -> Optional[str]:
+        # Not applicable
+        return None
+
+    def search(self, query: str) -> Optional[str]:
+        """Use soulseek to download the first matching file, return a file URI."""
+        sanitized = self.sanitize(query)
+        # snapshot directory before download
+        try:
+            before = set(os.listdir(DOWNLOAD_DIR))
+        except OSError:
+            before = set()
+        cmd = ["soulseek", "download", sanitized, "--destination", DOWNLOAD_DIR]
+        try:
+            subprocess.run(cmd, check=True, capture_output=True, text=True)
+        except Exception as e:
+            logging.getLogger(__name__).error(f"Soulseek download failed for '{query}': {e}")
+            return None
+        # detect newly downloaded file
+        try:
+            after = set(os.listdir(DOWNLOAD_DIR))
+            new_files = after - before
+            if new_files:
+                # pick the first new file
+                fname = sorted(new_files)[0]
+                filepath = os.path.join(DOWNLOAD_DIR, fname)
+                logging.getLogger(__name__).info(f"Soulseek downloaded file: {filepath}")
+                return f"file://{filepath}"
+        except OSError as e:
+            logging.getLogger(__name__).error(f"Error scanning download directory: {e}")
+        return None
+
+ # Registry of available searchers
 _searcher_registry: Dict[str, Type[AbstractTorrentSearcher]] = {
     'piratebay': PirateBayTorrentSearcher,
+    'soulseek': SoulseekSearcher,
     # add new searchers here
 }
 
 def create_searcher(name: str) -> AbstractTorrentSearcher:
-    """Factory: instantiate a TorrentSearcher by key."""
-    key = name.lower()
-    if key not in _searcher_registry:
-        raise ValueError(f"Unknown torrent searcher '{name}'")
-    return _searcher_registry[key]()
+     """Factory: instantiate a TorrentSearcher by key."""
+     key = name.lower()
+     if key not in _searcher_registry:
+         raise ValueError(f"Unknown torrent searcher '{name}'")
+     return _searcher_registry[key]()
