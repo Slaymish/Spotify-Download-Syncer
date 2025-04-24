@@ -2,12 +2,13 @@
 
 import os
 import sqlite3, logging
+from typing import Optional
 
 # Alias for downloaded set type
 OptionalSet = set[str]
 
 class State:
-    def __init__(self, db_path: str | None = None) -> None:
+    def __init__(self, db_path: Optional[str] = None) -> None:
         """Initialize SQLite DB and load processed track IDs into memory."""
         self.db_path = db_path or os.path.expanduser('~/.spotifytorrent.db')
         self.conn = sqlite3.connect(self.db_path)
