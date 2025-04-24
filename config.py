@@ -18,18 +18,29 @@ logger.setLevel(logging.INFO)
 logger.addHandler(handler)
 # --- end logging configuration ---
 
-# Required vars
-required_vars = ['SPOTIPY_CLIENT_ID', 'SPOTIPY_CLIENT_SECRET', 'SPOTIPY_REDIRECT_URI', 'SPOTIFY_PLAYLIST_ID', 'DOWNLOAD_DIR', 'QB_HOST', 'QB_PORT', 'QB_USER', 'QB_PASS']
-missing = [v for v in required_vars if not os.getenv(v)]
-if missing:
-    msg = "Missing environment variables: " + ", ".join(missing)
-    logging.error(msg)
-    try:
-        from pync import Notifier
-        Notifier.notify(msg, title="SpotifyTorrent")
-    except ImportError:
-        pass
-    sys.exit(1)
+def validate_env() -> None:
+    """Ensure required environment variables are set; exit if any are missing."""
+    required_vars = [
+        'SPOTIPY_CLIENT_ID',
+        'SPOTIPY_CLIENT_SECRET',
+        'SPOTIPY_REDIRECT_URI',
+        'SPOTIFY_PLAYLIST_ID',
+        'DOWNLOAD_DIR',
+        'QB_HOST',
+        'QB_PORT',
+        'QB_USER',
+        'QB_PASS'
+    ]
+    missing = [v for v in required_vars if not os.getenv(v)]
+    if missing:
+        msg = "Missing environment variables: " + ", ".join(missing)
+        logging.error(msg)
+        try:
+            from pync import Notifier
+            Notifier.notify(msg, title="SpotifyTorrent")
+        except ImportError:
+            pass
+        sys.exit(1)
 
 # Normalize redirect URI: use loopback IP for Spotify
 raw_redirect = os.getenv('SPOTIPY_REDIRECT_URI')

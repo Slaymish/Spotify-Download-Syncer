@@ -5,7 +5,7 @@ import threading
 import rumps
 from events import event_bus
 from container import Container
-from config import PLAYLIST_ID, DOWNLOAD_DIR
+from config import PLAYLIST_ID, DOWNLOAD_DIR, validate_env
 import logging
 
 logging.basicConfig(
@@ -72,4 +72,5 @@ class SpotifyTorrentApp(rumps.App):
         event_bus.publish('download_success', track)
 
 if __name__ == "__main__":
+    validate_env()
     SpotifyTorrentApp().run()
