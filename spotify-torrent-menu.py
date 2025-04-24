@@ -4,12 +4,8 @@ spotify-torrent-menu.py: Main Rumps app for Spotify-to-Torrent menu bar synchron
 import threading
 import rumps
 from events import event_bus
-
-from config import REDIRECT_URI, PLAYLIST_ID, DOWNLOAD_DIR, TORRENT_SEARCHER as SEARCHER_NAME
-from spotify_client import SpotifyClient
-from qb_client import QbClient
-from torrent_searchers import create_searcher
-from state import State
+from container import Container
+from config import PLAYLIST_ID, DOWNLOAD_DIR
 import logging
 
 logging.basicConfig(
@@ -20,15 +16,15 @@ logging.basicConfig(
 
 class SpotifyTorrentApp(rumps.App):
     def __init__(self):
-        """Initialize the menu bar UI and services."""
+        """Initialize the menu bar UI and services via DI container."""
         super().__init__("🎶", quit_button=None)
         self.title = "🎧 idle"
         self.menu = ["Sync Now", None, "Quit"]
-        self.sp = SpotifyClient()
-        self.qb = QbClient()
-        self.state = State()
-        # instantiate torrent searcher based on config
-        self.searcher = create_searcher(SEARCHER_NAME)
+        container = Container()
+        self.sp = container.spotify_client
+        self.qb = container.qb_client
+        self.state = container.state
+        self.searcher = container.searcher
 
     @rumps.timer(300)
     def auto_sync(self, sender) -> None:
