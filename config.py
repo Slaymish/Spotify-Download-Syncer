@@ -43,7 +43,7 @@ def validate_env() -> None:
         sys.exit(1)
 
 # Normalize redirect URI: use loopback IP for Spotify
-raw_redirect = os.getenv('SPOTIPY_REDIRECT_URI')
+raw_redirect = os.getenv('SPOTIPY_REDIRECT_URI') or ''
 parsed = urlparse(raw_redirect)
 if parsed.hostname == 'localhost':
     netloc = parsed.netloc.replace('localhost', '127.0.0.1')
@@ -53,7 +53,7 @@ else:
     REDIRECT_URI = raw_redirect
 
 # Normalize playlist ID
-raw_id = os.getenv('SPOTIFY_PLAYLIST_ID')
+raw_id = os.getenv('SPOTIFY_PLAYLIST_ID') or ''
 if raw_id.startswith('spotify:'):
     PLAYLIST_ID = raw_id.split(':')[-1]
 elif raw_id.startswith('http'):
