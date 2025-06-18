@@ -1,6 +1,5 @@
-[![Release](https://img.shields.io/github/v/release/hamishmb/spotify-torrent?style=flat-square)](https://github.com/hamishmb/spotify-torrent/releases/latest)
-**Download the latest release and run without setup.**
-[![CI](https://img.shields.io/github/actions/workflow/status/hamishmb/spotify-torrent/ci.yml?branch=main&style=flat-square)](https://github.com/hamishmb/spotify-torrent/actions/workflows/ci.yml)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Slaymish/Spotify-Download-Syncer/CI)
+
 
 # SpotifyTorrent Tray App
 
