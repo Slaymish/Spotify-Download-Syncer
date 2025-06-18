@@ -32,49 +32,6 @@ jobs:
         run: |
           pytest --maxfail=1 --disable-warnings -q
 
-  build-linux:
-    name: Build Linux (Arch Linux AArch64) Artifact
-    needs: test
-    runs-on: [self-hosted, linux, arm64]
-    strategy:
-      matrix:
-        python-version: ['3.9']
-
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Cache pip
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('.github/workflows/ci.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      - name: Cache PyInstaller build directory
-        uses: actions/cache@v3
-        with:
-          path: build
-          key: ${{ runner.os }}-pyinstaller-build-${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pyinstaller spotipy qbittorrent-api requests beautifulsoup4 python-dotenv setuptools wheel pystray Pillow
-
-      - name: Run PyInstaller (Linux AArch64)
-        run: |
-          python -m PyInstaller --noconfirm --onefile --windowed spotify-torrent-menu.py
-
-      - name: Archive Linux executable
-        uses: actions/upload-artifact@v4
-        with:
-          name: spotify-syncer-linux
-          path: dist/spotify-torrent-menu
-
   build-macos:
     name: Build macOS Artifact
     needs: test
@@ -106,7 +63,7 @@ jobs:
           path: dist/spotify-torrent-menu.app
 
   release:
-    needs: [build-linux, build-macos] # Ensure builds succeed before releasing
+    needs: [build-macos] # Ensure builds succeed before releasing
     runs-on: ubuntu-latest # Release can run on a single OS
     if: startsWith(github.ref, 'refs/tags/v') # Only run on version tags
 
@@ -136,16 +93,6 @@ jobs:
           cd ../..
           echo "Zipping complete. File should be at workspace root:"
           ls spotify-torrent-menu.app.zip
-
-      - name: Upload Linux Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/spotify-syncer-linux/spotify-torrent-menu
-          asset_name: spotify-syncer-linux
-          asset_content_type: application/octet-stream
 
       - name: Upload macOS Release Asset
         uses: actions/upload-release-asset@v1
