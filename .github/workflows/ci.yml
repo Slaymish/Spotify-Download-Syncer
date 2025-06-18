@@ -32,13 +32,13 @@ jobs:
         run: |
           pytest --maxfail=1 --disable-warnings -q
 
-  build:
-    needs: test # Ensure tests pass before building
-    runs-on: ${{ matrix.os }}
+  build-linux:
+    name: Build Linux (Arch Linux AArch64) Artifact
+    needs: test
+    runs-on: [self-hosted, linux, arm64]
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: ['3.9'] # Build with one Python version, e.g., 3.9
+        python-version: ['3.9']
 
     steps:
       - uses: actions/checkout@v3
@@ -50,35 +50,50 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # Install PyInstaller (will be added to requirements.txt later)
-          pip install pyinstaller
-          # Install all other dependencies from requirements.txt
-          # (Assuming PyInstaller will be added there)
-          # For now, list them explicitly based on setup.py, including OS specific ones
-          pip install spotipy qbittorrent-api requests beautifulsoup4 python-dotenv setuptools wheel
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            pip install pystray Pillow
-          elif [ "$RUNNER_OS" == "macOS" ]; then
-            pip install rumps pync
-          fi
+          pip install pyinstaller spotipy qbittorrent-api requests beautifulsoup4 python-dotenv setuptools wheel pystray Pillow
 
-      - name: Run PyInstaller
+      - name: Run PyInstaller (Linux AArch64)
         run: |
-          # The main script is spotify-torrent-menu.py
-          # We need to determine the best way to name the output and what files to include.
-          # For now, let's create a basic executable.
-          # Output will be in the 'dist' directory.
           python -m PyInstaller --noconfirm --onefile --windowed spotify-torrent-menu.py
-          # The --name could be something like spotify-syncer-${{ matrix.os }}
 
-      - name: Archive executable
+      - name: Archive Linux executable
         uses: actions/upload-artifact@v4
         with:
-          name: spotify-syncer-${{ matrix.os }}
-          path: ${{ runner.os == 'Linux' && 'dist/spotify-torrent-menu' || runner.os == 'macOS' && 'dist/spotify-torrent-menu.app' }}
+          name: spotify-syncer-linux
+          path: dist/spotify-torrent-menu
+
+  build-macos:
+    name: Build macOS Artifact
+    needs: test
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        python-version: ['3.9']
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller spotipy qbittorrent-api requests beautifulsoup4 python-dotenv setuptools wheel rumps pync
+
+      - name: Run PyInstaller (macOS)
+        run: |
+          python -m PyInstaller --noconfirm --onefile --windowed spotify-torrent-menu.py
+
+      - name: Archive macOS executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotify-syncer-macos
+          path: dist/spotify-torrent-menu.app
 
   release:
-    needs: build # Ensure build succeeds before releasing
+    needs: [build-linux, build-macos] # Ensure builds succeed before releasing
     runs-on: ubuntu-latest # Release can run on a single OS
     if: startsWith(github.ref, 'refs/tags/v') # Only run on version tags
 
@@ -100,13 +115,10 @@ jobs:
           prerelease: false
 
       - name: Zip macOS app bundle
-        # This step runs on ubuntu-latest (where the release job is running),
-        # it needs to find the macOS artifact downloaded by download-artifact.
-        # Artifacts are downloaded into subdirectories named after the artifact.
         run: |
           echo "Zipping macOS app bundle..."
           ls -R artifacts
-          cd artifacts/spotify-syncer-macos-latest
+          cd artifacts/spotify-syncer-macos
           zip -r ../../spotify-torrent-menu.app.zip spotify-torrent-menu.app
           cd ../..
           echo "Zipping complete. File should be at workspace root:"
@@ -118,7 +130,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/spotify-syncer-ubuntu-latest/spotify-torrent-menu
+          asset_path: artifacts/spotify-syncer-linux/spotify-torrent-menu
           asset_name: spotify-syncer-linux
           asset_content_type: application/octet-stream
 
