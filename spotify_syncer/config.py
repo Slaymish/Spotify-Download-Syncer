@@ -79,3 +79,7 @@ SPOTIFY_SCOPE = "playlist-read-private playlist-modify-private playlist-modify-p
 DOWNLOAD_DIR = os.getenv('DOWNLOAD_DIR') or os.getcwd()
 # Delete after downloaded toggle
 DELETE_AFTER_DOWNLOADED = os.getenv('DELETE_AFTER_DOWNLOADED', 'true').strip().lower() in ('1', 'true', 'yes')
+
+# Soulseek credentials
+SOULSEEK_ACCOUNT = os.getenv('SOULSEEK_ACCOUNT')
+SOULSEEK_PASSWORD = os.getenv('SOULSEEK_PASSWORD')

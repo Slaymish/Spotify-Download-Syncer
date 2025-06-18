@@ -65,6 +65,8 @@ To pull the latest changes and reinstall dependencies, run:
 ```
 You will need to restart the app for updates to take effect.
 
+Alternatively, use the **Check for Updates** option in the app menu to pull the latest version, reinstall dependencies, and automatically restart the application.
+
 ## Auto-start at Login
 
 To start SpotifyTorrent when you log in:

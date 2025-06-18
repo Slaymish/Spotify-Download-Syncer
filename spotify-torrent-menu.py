@@ -31,7 +31,7 @@ if sys.platform == 'darwin':
         def __init__(self):
             super().__init__("🎶", quit_button=None)
             self.title = "🎧 idle"
-            self.menu = ["Sync Now", "Settings", "Open Logs", "Clear State", None, "Quit"]
+            self.menu = ["Sync Now", "Settings", "Check for Updates", "Open Logs", "Clear State", None, "Quit"]
             container = Container()
             self.sp = container.spotify_client
             self.state = container.state
@@ -53,6 +53,20 @@ if sys.platform == 'darwin':
                 subprocess.Popen([sys.executable, script])
             except Exception as e:
                 rumps.alert(f"Failed to open settings: {e}")
+
+        @rumps.clicked("Check for Updates")
+        def check_updates(self, _):
+            script = os.path.join(os.path.dirname(__file__), "update.sh")
+            if not os.path.exists(script):
+                rumps.alert("Update script not found.")
+                return
+            try:
+                rumps.notification("SpotifyTorrent", None, "Checking for updates...")
+                subprocess.check_call([script])
+                rumps.notification("SpotifyTorrent", None, "Update complete, restarting...")
+                os.execv(sys.executable, [sys.executable, os.path.abspath(__file__)])
+            except Exception as e:
+                rumps.alert(f"Update failed: {e}")
 
         @rumps.clicked("Open Logs")
         def open_logs(self, _):
@@ -129,6 +143,7 @@ elif sys.platform.startswith('linux'):
                 menu=Menu(
                     Item("Sync Now", self.manual_sync),
                     Item("Settings", self.open_settings),
+                    Item("Check for Updates", self.check_updates),
                     Item("Open Logs", self.open_logs),
                     Item("Clear State", self.clear_state),
                     Item("Quit", self.quit_app),
@@ -211,6 +226,19 @@ elif sys.platform.startswith('linux'):
                 subprocess.Popen([sys.executable, script])
             except Exception as e:
                 print(f"Failed to open settings: {e}")
+
+        def check_updates(self, icon=None, item=None):
+            script = os.path.join(os.path.dirname(__file__), "update.sh")
+            if not os.path.exists(script):
+                subprocess.call(["notify-send", "SpotifyTorrent", "Update script not found."])
+                return
+            try:
+                subprocess.call(["notify-send", "SpotifyTorrent", "Checking for updates..."])
+                subprocess.check_call([script])
+                subprocess.call(["notify-send", "SpotifyTorrent", "Update complete, restarting..."])
+                os.execv(sys.executable, [sys.executable, os.path.abspath(__file__)])
+            except Exception as e:
+                subprocess.call(["notify-send", "SpotifyTorrent", f"Update failed: {e}"])
 
         def quit_app(self, icon=None, item=None):
             self.icon.stop()
