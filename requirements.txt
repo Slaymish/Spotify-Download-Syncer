@@ -5,3 +5,6 @@ python-dotenv
 pytest
 pystray
 Pillow
+rumps
+pync
+pyinstaller
