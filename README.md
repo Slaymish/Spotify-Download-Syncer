@@ -23,7 +23,7 @@ A cross-platform (macOS/Linux) tray application that syncs a Spotify playlist to
 
 Prebuilt executables are available—no Python or manual .env setup required.
 
-1. Visit the [Releases page](https://github.com/hamishmb/spotify-torrent/releases/latest) and download the package for your OS:
+1. Visit the [Releases page](https://github.com/Slaymish/Spotify-Download-Syncer/releases) and download the package for your OS:
    - **macOS**: `spotify-syncer-macos.zip`
    - **Linux**: `spotify-syncer-linux`
 2. **macOS**: double-click the downloaded ZIP file (`spotify-syncer-macos.zip`) to unzip it, then double-click `spotify-torrent-menu.app` to launch.
