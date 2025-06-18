@@ -80,49 +80,6 @@ class AbstractTorrentSearcher(ABC):
         except ImportError:
             pass
 
-class PirateBayTorrentSearcher(AbstractTorrentSearcher):
-    """Concrete TorrentSearcher for The Pirate Bay (music category)."""
-    def __init__(self, category: str = "101") -> None:
-        self.base_url = "https://thepiratebay.org/search.php"
-        self.category = category
-
-    def search(self, query: str) -> Optional[str]:
-        """Search via HTML first, then fallback to JSON API if no magnet found."""
-        sanitized = self.sanitize(query)
-        url = self.build_url(sanitized)
-        content = self.fetch(url)
-        if not content:
-            return None
-        # Try HTML parsing
-        primary = self.parse_primary(content)
-        if primary:
-            return primary
-        # Fallback to JSON API (apibay.org)
-        api_url = f"https://apibay.org/q.php?q={quote_plus(sanitized)}&cat={self.category}"
-        try:
-            r = requests.get(api_url, timeout=10)
-            r.raise_for_status()
-            data = r.json()
-            if isinstance(data, list) and data:
-                info_hash = data[0].get('info_hash')
-                if info_hash:
-                    return f"magnet:?xt=urn:btih:{info_hash}"
-        except requests.RequestException as e:
-            logging.getLogger(__name__).warning(f"JSON API error searching '{api_url}': {e}")
-        # HTML fallback
-        fallback = self.parse_fallback(content)
-        if fallback:
-            return fallback
-        self.notify_not_found(query, url)
-        return None
-
-    def build_url(self, query: str) -> str:
-        return f"{self.base_url}?q={quote_plus(query)}&cat={self.category}"
-
-    def parse_primary(self, content: str) -> Optional[str]:
-        soup = BeautifulSoup(content, "html.parser")
-        link = soup.select_one('ol#torrents li.list-entry span.item-icons a[href^="magnet:"]')
-        return link['href'] if link and link.has_attr('href') else None
 
 class SoulseekSearcher(AbstractTorrentSearcher):
     """Search and download via Soulseek network using soulseek-cli with progressive fallback and fast query check."""
@@ -139,17 +96,46 @@ class SoulseekSearcher(AbstractTorrentSearcher):
             )
             return None
         sanitized = self.sanitize(query)
-        queries = [sanitized]
-        if '(' in sanitized:
-            queries.append(sanitized.split('(')[0].strip())
-        if '-' in sanitized:
-            queries.append(sanitized.split('-')[0].strip())
-        if ' by ' in sanitized:
-            queries.append(sanitized.split(' by ')[0].strip())
-        queries.append(' '.join(sanitized.split()[:3]))
-        queries.append(' '.join(sorted(set(sanitized.split()), key=sanitized.split().index)))
+        raw = query.strip()
+        variants = [raw]
+        if '(' in raw:
+            variants.append(raw.split('(')[0].strip())
+        if '-' in raw:
+            variants.append(raw.split('-')[0].strip())
+        if ' by ' in raw.lower():
+            variants.append(raw.lower().split(' by ')[0].strip())
+        if ':' in raw:
+            variants.append(raw.split(':')[0].strip())
+        lower_raw = raw.lower()
+        for key in ['feat', 'ft', 'featuring']:
+            idx = lower_raw.find(key)
+            if idx != -1:
+                variants.append(raw[:idx].strip())
+        for qual in ['official video', 'official', 'video', 'lyrics', 'audio', 'hd', 'live']:
+            idx = lower_raw.find(qual)
+            if idx != -1:
+                variants.append(raw[:idx].strip())
+        variants.append(' '.join(raw.split()[::-1]))
+        queries = []
         seen = set()
-        queries = [q for q in queries if q and not (q in seen or seen.add(q))]
+        for v in variants:
+            sv = self.sanitize(v)
+            if sv and sv not in seen:
+                seen.add(sv)
+                queries.append(sv)
+        if sanitized not in seen:
+            queries.insert(0, sanitized)
+            seen.add(sanitized)
+        words = sanitized.split()
+        if len(words) > 3:
+            first3 = ' '.join(words[:3])
+            if first3 not in seen:
+                queries.append(first3)
+                seen.add(first3)
+        unique = ' '.join(dict.fromkeys(words))
+        if unique and unique not in seen:
+            queries.append(unique)
+            seen.add(unique)
         modes = ['mp3', 'flac']
         qualities = ['320', '256', '192', None]
         def has_results(q, mode, quality):
@@ -177,6 +163,9 @@ class SoulseekSearcher(AbstractTorrentSearcher):
             try:
                 subprocess.run(cmd, check=True, capture_output=True, text=True)
             except Exception as e:
+                logging.getLogger(__name__).error(
+                    f"Soulseek download failed for '{q}' mode={mode} quality={quality}: {e}"
+                )
                 return None
             try:
                 after = set(os.listdir(DOWNLOAD_DIR))
@@ -192,22 +181,11 @@ class SoulseekSearcher(AbstractTorrentSearcher):
         for q in queries:
             for mode in modes:
                 for quality in qualities:
-                    logging.getLogger(__name__).info(f"Soulseek search: '{q}' mode={mode} quality={quality}")
+                    logging.getLogger(__name__).info(
+                        f"Soulseek search: '{q}' mode={mode} quality={quality}"
+                    )
                     if has_results(q, mode, quality):
-                        return try_download(q, mode, quality)
+                        result = try_download(q, mode, quality)
+                        if result:
+                            return result
         return None
-
- # Registry of available searchers
-
-_searcher_registry: Dict[str, Type[AbstractTorrentSearcher]] = {
-    'piratebay': PirateBayTorrentSearcher,
-    'soulseek': SoulseekSearcher,
-    # add new searchers here
-}
-
-def create_searcher(name: str) -> AbstractTorrentSearcher:
-     """Factory: instantiate a TorrentSearcher by key."""
-     key = name.lower().strip()
-     if key not in _searcher_registry:
-         raise ValueError(f"Unknown torrent searcher '{name}'")
-     return _searcher_registry[key]()

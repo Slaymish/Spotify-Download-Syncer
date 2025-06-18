@@ -5,12 +5,16 @@ VERSION = "0.1.0"
 
 install_requires=[
     "spotipy",
-    "qbittorrent-api",
+    # torrent client removed; Soulseek-only
     "requests",
     "beautifulsoup4",
     "python-dotenv",
-    "rumps",
-    "pync",
+    # macOS only dependencies
+    "rumps; sys_platform=='darwin'",
+    "pync; sys_platform=='darwin'",
+    # Linux (and other) tray support
+    "pystray; sys_platform!='darwin'",
+    "Pillow; sys_platform!='darwin'",
 ]
 
 # Base setup kwargs

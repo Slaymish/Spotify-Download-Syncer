@@ -1,11 +1,15 @@
-# SpotifyTorrent Menu Bar
+# SpotifyTorrent Tray App
 
-A macOS menu-bar app that syncs a Spotify playlist to Soulseek or torrent downloads.
+A cross-platform (macOS/Linux) tray application that syncs a Spotify playlist to Soulseek downloads.
 
 ## Prerequisites
 
-- macOS with Python 3.9+
-- [qBittorrent](https://www.qbittorrent.org/) with Web UI enabled
+- macOS or Linux with Python 3.9+
+- On Linux, you may need system tray and notify dependencies:
+
+    ```bash
+    sudo apt install python3-gi gir1.2-appindicator3-0.1 libnotify-bin
+    ```
 - Spotify Developer App (Client ID & Secret)
 - For Soulseek: `npm install -g soulseek-cli`
 
@@ -29,12 +33,8 @@ A macOS menu-bar app that syncs a Spotify playlist to Soulseek or torrent downlo
    SPOTIPY_CLIENT_SECRET=YOUR_SPOTIFY_CLIENT_SECRET
    SPOTIPY_REDIRECT_URI=http://127.0.0.1:8888/callback
    SPOTIFY_PLAYLIST_ID=YOUR_PLAYLIST_ID
-   QB_HOST=localhost
-   QB_PORT=8080
-   QB_USER=YOUR_QBITTORRENT_USER
-   QB_PASS=YOUR_QBITTORRENT_PASS
    DOWNLOAD_DIR=/Users/you/Music/Downloads
-   TORRENT_SEARCHER=soulseek    # Set to 'piratebay' or 'soulseek'
+   # Soulseek mode (default): no TORRENT_SEARCHER needed
 
    DELETE_AFTER_DOWNLOADED=false  # (keeps tracks in playlist after download)
 
@@ -46,13 +46,24 @@ A macOS menu-bar app that syncs a Spotify playlist to Soulseek or torrent downlo
 3. **Register Spotify redirect URI**:
    Add `http://127.0.0.1:8888/callback` to your Spotify Developer Dashboard under **Edit Settings → Redirect URIs**
 
+
 4. **Run the app**:
 
-   ```bash
-   python spotify-torrent-menu.py
-   ```
+```bash
+python spotify-torrent-menu.py
+```
 
    The app will appear as a menu bar icon. Use **Sync Now** to manually start a sync or wait for the automatic 5-minute sync.
+   Use **Settings** to open a GUI for editing your `.env` configuration options. After saving, restart the app for changes to take effect.
+
+## Updating
+
+To pull the latest changes and reinstall dependencies, run:
+
+```bash
+./update.sh
+```
+You will need to restart the app for updates to take effect.
 
 ## Auto-start at Login
 
