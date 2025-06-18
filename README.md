@@ -1,3 +1,5 @@
+[![CI](https://github.com/hamishmb/spotify-torrent/actions/workflows/ci.yml/badge.svg)](https://github.com/hamishmb/spotify-torrent/actions/workflows/ci.yml)
+
 # SpotifyTorrent Tray App
 
 A cross-platform (macOS/Linux) tray application that syncs a Spotify playlist to Soulseek downloads.
@@ -6,9 +8,9 @@ A cross-platform (macOS/Linux) tray application that syncs a Spotify playlist to
 
 - macOS or Linux with Python 3.9+
 - On Linux, you may need system tray and notify dependencies:
-
+- On Arch Linux, you may need to install the following dependencies:
     ```bash
-    sudo apt install python3-gi gir1.2-appindicator3-0.1 libnotify-bin
+    sudo pacman -S python-gobject libappindicator-gtk3 libnotify
     ```
 - Spotify Developer App (Client ID & Secret)
 - For Soulseek: `npm install -g soulseek-cli`
@@ -79,6 +81,14 @@ To start SpotifyTorrent when you log in:
 - Check `~/spotifytorrent.log` for detailed logs
 - Downloaded track state is stored in `~/.spotifytorrent.db`
 - To clear downloaded history: click **Clear State** in the menu
+
+## CI/CD
+
+This project uses GitHub Actions to automate testing, building, and releases:
+
+- **Testing**: Unit tests are automatically run against multiple Python versions on both Linux and macOS for every push and pull request to the `main` branch. You can see the status of these tests with the badge at the top of this README.
+- **Building**: Executable versions for Linux and macOS are built automatically.
+- **Releases**: When a new version is tagged (e.g., `v0.2.0`), a GitHub Release is automatically created, and the compiled applications for Linux and macOS are attached as assets for download.
 
 ## License
 
