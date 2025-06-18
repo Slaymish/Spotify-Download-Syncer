@@ -1,5 +1,4 @@
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Slaymish/Spotify-Download-Syncer/CI)
-
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Slaymish/Spotify-Download-Syncer/.github%2Fworkflows%2Fci.yml?branch=main)
 
 # SpotifyTorrent Tray App
 
