@@ -6,9 +6,9 @@ A cross-platform (macOS/Linux) tray application that syncs a Spotify playlist to
 
 - macOS or Linux with Python 3.9+
 - On Linux, you may need system tray and notify dependencies:
-
+- On Arch Linux, you may need to install the following dependencies:
     ```bash
-    sudo apt install python3-gi gir1.2-appindicator3-0.1 libnotify-bin
+    sudo pacman -S python-gobject libappindicator-gtk3 libnotify
     ```
 - Spotify Developer App (Client ID & Secret)
 - For Soulseek: `npm install -g soulseek-cli`
