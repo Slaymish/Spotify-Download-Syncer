@@ -1,6 +1,6 @@
 [![Release](https://img.shields.io/github/v/release/hamishmb/spotify-torrent?style=flat-square)](https://github.com/hamishmb/spotify-torrent/releases/latest)
 **Download the latest release and run without setup.**
-[![CI](https://github.com/hamishmb/spotify-torrent/actions/workflows/ci.yml/badge.svg)](https://github.com/hamishmb/spotify-torrent/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/hamishmb/spotify-torrent/ci.yml?branch=main&style=flat-square)](https://github.com/hamishmb/spotify-torrent/actions/workflows/ci.yml)
 
 # SpotifyTorrent Tray App
 

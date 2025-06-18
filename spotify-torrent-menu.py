@@ -45,10 +45,10 @@ if sys.platform == 'darwin':
 
         @rumps.clicked("Settings")
         def open_settings(self, _):
-        try:
-            spotify_env_gui.main()
-        except Exception as e:
-            rumps.alert(f"Failed to open settings: {e}")
+            try:
+                spotify_env_gui.main()
+            except Exception as e:
+                rumps.alert(f"Failed to open settings: {e}")
 
         @rumps.clicked("Check for Updates")
         def check_updates(self, _):
@@ -100,21 +100,21 @@ if sys.platform == 'darwin':
             except Exception:
                 logging.exception("Exception occurred during sync")
 
-    def _process_one(self, track):
-        """Process a single track: search via Soulseek, notify, and remove."""
-        query = f"{track.name} {track.artist}"
-        logging.info(f"Searching Soulseek for: '{query}'")
-        result = self.searcher.search(query)
-        if not result:
-            logging.warning(f"No download for {query}")
-            event_bus.publish('torrent_not_found', query, track_name=track.name)
-            return
-        if DELETE_AFTER_DOWNLOADED:
-            self.sp.remove_tracks([track.uri])
-        self.state.add(track.id)
-        msg = f"✔️ {track.name} by {track.artist}"
-        logging.info(msg)
-        event_bus.publish('download_success', track)
+        def _process_one(self, track):
+            """Process a single track: search via Soulseek, notify, and remove."""
+            query = f"{track.name} {track.artist}"
+            logging.info(f"Searching Soulseek for: '{query}'")
+            result = self.searcher.search(query)
+            if not result:
+                logging.warning(f"No download for {query}")
+                event_bus.publish('torrent_not_found', query, track_name=track.name)
+                return
+            if DELETE_AFTER_DOWNLOADED:
+                self.sp.remove_tracks([track.uri])
+            self.state.add(track.id)
+            msg = f"✔️ {track.name} by {track.artist}"
+            logging.info(msg)
+            event_bus.publish('download_success', track)
 
     def main():
         try:
@@ -230,10 +230,10 @@ elif sys.platform.startswith('linux'):
             subprocess.Popen([opener, LOG_PATH])
 
         def open_settings(self, icon=None, item=None):
-        try:
-            spotify_env_gui.main()
-        except Exception as e:
-            print(f"Failed to open settings: {e}")
+            try:
+                spotify_env_gui.main()
+            except Exception as e:
+                print(f"Failed to open settings: {e}")
 
         def check_updates(self, icon=None, item=None):
             script = os.path.join(os.path.dirname(__file__), "update.sh")
