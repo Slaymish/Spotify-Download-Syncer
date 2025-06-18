@@ -11,6 +11,7 @@ import threading
 import time
 import subprocess
 import logging
+import spotify_env_gui
 
 from spotify_syncer.events import event_bus
 from spotify_syncer.container import Container
@@ -44,15 +45,10 @@ if sys.platform == 'darwin':
 
         @rumps.clicked("Settings")
         def open_settings(self, _):
-            script = os.path.join(os.path.dirname(__file__), "spotify_env_gui.py")
-            if not os.path.exists(script):
-                rumps.alert("Settings script not found.")
-                return
-
-            try:
-                subprocess.Popen([sys.executable, script])
-            except Exception as e:
-                rumps.alert(f"Failed to open settings: {e}")
+        try:
+            spotify_env_gui.main()
+        except Exception as e:
+            rumps.alert(f"Failed to open settings: {e}")
 
         @rumps.clicked("Check for Updates")
         def check_updates(self, _):
@@ -121,7 +117,15 @@ if sys.platform == 'darwin':
         event_bus.publish('download_success', track)
 
     def main():
-        validate_env()
+        try:
+            validate_env()
+        except SystemExit:
+            # Missing configuration: open settings GUI and exit
+            try:
+                spotify_env_gui.main()
+            except Exception:
+                pass
+            sys.exit(0)
         SpotifyTorrentApp().run()
 
 elif sys.platform.startswith('linux'):
@@ -131,7 +135,15 @@ elif sys.platform.startswith('linux'):
 
     class SpotifyTorrentApp:
         def __init__(self):
-            validate_env()
+            try:
+                validate_env()
+            except SystemExit:
+                # Missing configuration: open settings GUI and exit
+                try:
+                    spotify_env_gui.main()
+                except Exception:
+                    pass
+                sys.exit(0)
             container = Container()
             self.sp = container.spotify_client
             self.state = container.state
@@ -218,14 +230,10 @@ elif sys.platform.startswith('linux'):
             subprocess.Popen([opener, LOG_PATH])
 
         def open_settings(self, icon=None, item=None):
-            script = os.path.join(os.path.dirname(__file__), "spotify_env_gui.py")
-            if not os.path.exists(script):
-                print("Settings script not found.")
-                return
-            try:
-                subprocess.Popen([sys.executable, script])
-            except Exception as e:
-                print(f"Failed to open settings: {e}")
+        try:
+            spotify_env_gui.main()
+        except Exception as e:
+            print(f"Failed to open settings: {e}")
 
         def check_updates(self, icon=None, item=None):
             script = os.path.join(os.path.dirname(__file__), "update.sh")

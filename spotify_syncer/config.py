@@ -31,18 +31,20 @@ else:
     logging.getLogger(__name__).warning("No .env file found; defaults and shell env will be used.")
  # --- end logging configuration ---
 
+# Required environment variables for application configuration
+REQUIRED_ENV_VARS = [
+    'SPOTIPY_CLIENT_ID',
+    'SPOTIPY_CLIENT_SECRET',
+    'SPOTIPY_REDIRECT_URI',
+    'SPOTIFY_PLAYLIST_ID',
+    'DOWNLOAD_DIR',
+    'SOULSEEK_ACCOUNT',
+    'SOULSEEK_PASSWORD',
+]
+
 def validate_env() -> None:
     """Ensure required environment variables are set; exit if any are missing."""
-    required_vars = [
-        'SPOTIPY_CLIENT_ID',
-        'SPOTIPY_CLIENT_SECRET',
-        'SPOTIPY_REDIRECT_URI',
-        'SPOTIFY_PLAYLIST_ID',
-        'DOWNLOAD_DIR',
-        'SOULSEEK_ACCOUNT',
-        'SOULSEEK_PASSWORD'
-    ]
-    missing = [v for v in required_vars if not os.getenv(v)]
+    missing = [v for v in REQUIRED_ENV_VARS if not os.getenv(v)]
     if missing:
         msg = "Missing environment variables: " + ", ".join(missing)
         logging.error(msg)

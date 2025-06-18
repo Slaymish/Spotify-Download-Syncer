@@ -1,3 +1,5 @@
+[![Release](https://img.shields.io/github/v/release/hamishmb/spotify-torrent?style=flat-square)](https://github.com/hamishmb/spotify-torrent/releases/latest)
+**Download the latest release and run without setup.**
 [![CI](https://github.com/hamishmb/spotify-torrent/actions/workflows/ci.yml/badge.svg)](https://github.com/hamishmb/spotify-torrent/actions/workflows/ci.yml)
 
 # SpotifyTorrent Tray App
@@ -5,6 +7,8 @@
 A cross-platform (macOS/Linux) tray application that syncs a Spotify playlist to Soulseek downloads.
 
 ## Prerequisites
+
+> **Note:** If you downloaded the prebuilt release, you can skip the Python setup below; only `soulseek-cli` is required.
 
 - macOS or Linux with Python 3.9+
 - On Linux, you may need system tray and notify dependencies:
@@ -17,46 +21,36 @@ A cross-platform (macOS/Linux) tray application that syncs a Spotify playlist to
 
 ## Quick Start
 
-1. **Install the app**:
+### Download & Run (Prebuilt)
 
-   ```bash
-   git clone https://github.com/Slaymish/Spotify-Download-Syncer.git
-   cd Spotify-Download-Syncer
-   python -m venv venv
-   source venv/bin/activate
-   pip install -e .
-   ```
+Prebuilt executables are available—no Python or manual .env setup required.
 
-2. **Configure the app**:
-   Create a `.env` file in the project root:
+1. Visit the [Releases page](https://github.com/hamishmb/spotify-torrent/releases/latest) and download the package for your OS:
+   - **macOS**: `spotify-syncer-macos.zip`
+   - **Linux**: `spotify-syncer-linux`
+2. **macOS**: double-click the downloaded ZIP file (`spotify-syncer-macos.zip`) to unzip it, then double-click `spotify-torrent-menu.app` to launch.
+   **Linux**: make the binary executable (`chmod +x spotify-syncer-linux`) and run it (`./spotify-syncer-linux`).
+3. On first launch, the Settings dialog will open automatically. Enter your Spotify API credentials, Soulseek account info, download directory, and other options.
 
-   ```dotenv
-   SPOTIPY_CLIENT_ID=YOUR_SPOTIFY_CLIENT_ID
-   SPOTIPY_CLIENT_SECRET=YOUR_SPOTIFY_CLIENT_SECRET
-   SPOTIPY_REDIRECT_URI=http://127.0.0.1:8888/callback
-   SPOTIFY_PLAYLIST_ID=YOUR_PLAYLIST_ID
-   DOWNLOAD_DIR=/Users/you/Music/Downloads
-   # Soulseek mode (default): no TORRENT_SEARCHER needed
+### From Source (Advanced)
 
-   DELETE_AFTER_DOWNLOADED=false  # (keeps tracks in playlist after download)
+If you prefer to run from source, ensure Python 3.9+ is installed and then:
 
-   # Only needed for Soulseek
-   SOULSEEK_ACCOUNT=YOUR_SOULSEEK_USERNAME
-   SOULSEEK_PASSWORD=YOUR_SOULSEEK_PASSWORD
-   ```
+```bash
+git clone https://github.com/hamishmb/spotify-torrent.git
+cd spotify-torrent
+python -m venv venv
+source venv/bin/activate
+pip install -e .
+```
 
-3. **Register Spotify redirect URI**:
-   Add `http://127.0.0.1:8888/callback` to your Spotify Developer Dashboard under **Edit Settings → Redirect URIs**
-
-
-4. **Run the app**:
+Launch the app with:
 
 ```bash
 python spotify-torrent-menu.py
 ```
 
-   The app will appear as a menu bar icon. Use **Sync Now** to manually start a sync or wait for the automatic 5-minute sync.
-   Use **Settings** to open a GUI for editing your `.env` configuration options. After saving, restart the app for changes to take effect.
+Use **Settings** from the tray/menu icon to configure your credentials and options.
 
 ## Updating
 

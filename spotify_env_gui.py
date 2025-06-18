@@ -19,6 +19,22 @@ except ImportError:
     print("python-dotenv is required to run this script. Please install python-dotenv.")
     sys.exit(1)
 
+# Determine which configuration keys to expose in the GUI
+try:
+    from spotify_syncer.config import REQUIRED_ENV_VARS
+except ImportError:
+    REQUIRED_ENV_VARS = [
+        'SPOTIPY_CLIENT_ID',
+        'SPOTIPY_CLIENT_SECRET',
+        'SPOTIPY_REDIRECT_URI',
+        'SPOTIFY_PLAYLIST_ID',
+        'DOWNLOAD_DIR',
+        'SOULSEEK_ACCOUNT',
+        'SOULSEEK_PASSWORD',
+    ]
+# Include optional flags after required variables
+DEFAULT_KEYS = REQUIRED_ENV_VARS + ['DELETE_AFTER_DOWNLOADED']
+
 
 def main():
     dotenv_path = find_dotenv()
@@ -28,7 +44,11 @@ def main():
             open(dotenv_path, 'a').close()
 
     values = dotenv_values(dotenv_path)
-    keys = list(values.keys())
+    # Populate default keys first, then preserve any additional existing keys
+    keys = list(DEFAULT_KEYS)
+    for key in values.keys():
+        if key not in keys:
+            keys.append(key)
 
     root = tk.Tk()
     root.title("SpotifyTorrent Settings")
